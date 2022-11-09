@@ -14,6 +14,7 @@ import (
 )
 
 func main() {
+	//Selects the port for each user starting at 5000 with the argument 0
 	arg1, _ := strconv.ParseInt(os.Args[1], 10, 32)
 	ownPort := int32(arg1) + 5000
 
@@ -21,10 +22,12 @@ func main() {
 	defer cancel()
 
 	p := &peer{
-		id:            ownPort,
+		id: ownPort,
+		//map of clients ID's and how many pings recieved from that client
 		amountOfPings: make(map[int32]int32),
-		clients:       make(map[int32]ping.PingClient),
-		ctx:           ctx,
+
+		clients: make(map[int32]ping.PingClient),
+		ctx:     ctx,
 	}
 
 	// Create listener tcp on port ownPort
@@ -41,6 +44,7 @@ func main() {
 		}
 	}()
 
+	//connects to all clients except self (maximum 3 clients)
 	for i := 0; i < 3; i++ {
 		port := int32(5000) + int32(i)
 
@@ -73,6 +77,7 @@ type peer struct {
 	ctx           context.Context
 }
 
+// when pinged
 func (p *peer) Ping(ctx context.Context, req *ping.Request) (*ping.Reply, error) {
 	id := req.Id
 	p.amountOfPings[id] += 1
@@ -81,6 +86,7 @@ func (p *peer) Ping(ctx context.Context, req *ping.Request) (*ping.Reply, error)
 	return rep, nil
 }
 
+// when pinging
 func (p *peer) sendPingToAll() {
 	request := &ping.Request{Id: p.id}
 	for id, client := range p.clients {
