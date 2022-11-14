@@ -8,10 +8,13 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"sync"
 
 	ping "github.com/Divik-kid/Distri04/ping"
 	"google.golang.org/grpc"
 )
+
+var mu sync.Mutex
 
 func main() {
 	//Selects the port for each user starting at 5000 with the argument 0
@@ -86,7 +89,6 @@ func (p *peer) Ping(ctx context.Context, req *ping.Request) (*ping.Reply, error)
 	rep := &ping.Reply{Amount: p.amountOfPings[id], Access: false}
 
 	//Determine if this nodes' id is greater than the requests' author
-
 	if req.LogTime < p.LampTime {
 		//faster lamport time wins
 		//fmt.Println("YES YOU CAN ACCESS")
@@ -102,6 +104,8 @@ func (p *peer) Ping(ctx context.Context, req *ping.Request) (*ping.Reply, error)
 }
 
 func (p *peer) CriticalState() {
+	mu.Lock()
+	defer mu.Unlock()
 	fmt.Printf("%v Has accessed the critical state", p.id)
 	fmt.Println()
 }
@@ -121,7 +125,7 @@ func (p *peer) sendPingToAll() {
 			//count until all have said yes then access
 			accessCount += 1
 		} else {
-			//wipe the count and dont acces
+			//wipe the count and dont access
 			accessCount = 0
 		}
 		if accessCount == len(p.clients) {
