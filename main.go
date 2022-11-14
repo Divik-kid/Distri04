@@ -91,19 +91,16 @@ func (p *peer) Ping(ctx context.Context, req *ping.Request) (*ping.Reply, error)
 
 	//Determine if this nodes' id is greater than the requests' author
 	//only answer the reply when own requests have been answered
-	for {
-		if p.State == "ACCEPTING" {
-			if req.LogTime < p.LampTime {
-				//faster lamport time wins
-				//fmt.Println("YES YOU CAN ACCESS")
+
+	if p.State == "ACCEPTING" {
+		if req.LogTime < p.LampTime {
+			//faster lamport time wins
+			rep.Access = true
+		} else if req.LogTime == p.LampTime {
+			//bigger ID wins
+			if p.id < id {
 				rep.Access = true
-			} else if req.LogTime == p.LampTime {
-				//bigger ID wins
-				if p.id < id {
-					rep.Access = true
-				}
 			}
-			break
 		}
 
 	}
