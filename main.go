@@ -75,6 +75,7 @@ type peer struct {
 	amountOfPings map[int32]int32
 	clients       map[int32]ping.PingClient
 	ctx           context.Context
+	LampTime      int32
 }
 
 // when pinged
@@ -85,47 +86,49 @@ func (p *peer) Ping(ctx context.Context, req *ping.Request) (*ping.Reply, error)
 	rep := &ping.Reply{Amount: p.amountOfPings[id], Access: false}
 
 	//Determine if this nodes' id is greater than the requests' author
-	/*
-		if p.amountOfPings[id] < p.amountOfPings[p.id] {
-			fmt.Print(id)
-			fmt.Println(" came before me")
+
+	if req.LogTime < p.LampTime {
+		//faster lamport time wins
+		//fmt.Println("YES YOU CAN ACCESS")
+		rep.Access = true
+	} else if req.LogTime == p.LampTime {
+		//bigger ID wins
+		if p.id < id {
+			rep.Access = true
 		}
-		if p.amountOfPings[id] > p.amountOfPings[p.id] {
-			fmt.Print("I came before ")
-			fmt.Println(id)
-		}
-	*/
-	if req.LogTime < p.amountOfPings[id] {
-		fmt.Println("YES YOU CAN ACCESS")
-	} else {
-		fmt.Println("NO YOU CANT ACCESS")
 	}
-	/*
-		if p.id > id {
-			fmt.Print("I AM BIGGER THAN ")
-			fmt.Println(id)
-			rep = &ping.Reply{}
-		}
-	*/
+
 	return rep, nil
 }
 
 func (p *peer) CriticalState() {
-	fmt.Print(p.id)
-	fmt.Println(" Has accessed the critical state")
+	fmt.Printf("%v Has accessed the critical state", p.id)
+	fmt.Println()
 }
 
 // when pinging
 func (p *peer) sendPingToAll() {
 
-	request := &ping.Request{Id: p.id}
-
+	request := &ping.Request{Id: p.id, LogTime: p.LampTime}
+	p.LampTime += 1
+	var accessCount int
 	for id, client := range p.clients {
 		reply, err := client.Ping(p.ctx, request)
 		if err != nil {
 			fmt.Println("something went wrong")
 		}
-		fmt.Printf("Got reply from id %v: %v\n", id, reply.Amount)
+		if reply.Access {
+			//count until all have said yes then access
+			accessCount += 1
+		} else {
+			//wipe the count and dont acces
+			accessCount = 0
+		}
+		if accessCount == len(p.clients) {
+			p.CriticalState()
+		}
+
+		fmt.Printf("id %v said %v\n", id, reply.Access)
 	}
 
 }
