@@ -8,10 +8,13 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"sync"
 
 	ping "github.com/Divik-kid/Distri04/ping"
 	"google.golang.org/grpc"
 )
+
+var mu sync.Mutex
 
 func main() {
 	//Selects the port for each user starting at 5000 with the argument 0
@@ -75,6 +78,7 @@ type peer struct {
 	amountOfPings map[int32]int32
 	clients       map[int32]ping.PingClient
 	ctx           context.Context
+	LampTime      int32
 }
 
 // when pinged
@@ -82,18 +86,53 @@ func (p *peer) Ping(ctx context.Context, req *ping.Request) (*ping.Reply, error)
 	id := req.Id
 	p.amountOfPings[id] += 1
 
-	rep := &ping.Reply{Amount: p.amountOfPings[id]}
+	rep := &ping.Reply{Amount: p.amountOfPings[id], Access: false}
+
+	//Determine if this nodes' id is greater than the requests' author
+	if req.LogTime < p.LampTime {
+		//faster lamport time wins
+		//fmt.Println("YES YOU CAN ACCESS")
+		rep.Access = true
+	} else if req.LogTime == p.LampTime {
+		//bigger ID wins
+		if p.id < id {
+			rep.Access = true
+		}
+	}
+
 	return rep, nil
+}
+
+func (p *peer) CriticalState() {
+	mu.Lock()
+	defer mu.Unlock()
+	fmt.Printf("%v Has accessed the critical state", p.id)
+	fmt.Println()
 }
 
 // when pinging
 func (p *peer) sendPingToAll() {
-	request := &ping.Request{Id: p.id}
+
+	request := &ping.Request{Id: p.id, LogTime: p.LampTime}
+	p.LampTime += 1
+	var accessCount int
 	for id, client := range p.clients {
 		reply, err := client.Ping(p.ctx, request)
 		if err != nil {
 			fmt.Println("something went wrong")
 		}
-		fmt.Printf("Got reply from id %v: %v\n", id, reply.Amount)
+		if reply.Access {
+			//count until all have said yes then access
+			accessCount += 1
+		} else {
+			//wipe the count and dont access
+			accessCount = 0
+		}
+		if accessCount == len(p.clients) {
+			p.CriticalState()
+		}
+
+		fmt.Printf("id %v said %v\n", id, reply.Access)
 	}
+
 }
