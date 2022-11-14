@@ -97,5 +97,5 @@ var Ping_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "ping/framework.proto",
+	Metadata: "framework.proto",
 }
