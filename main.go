@@ -83,7 +83,28 @@ func (p *peer) Ping(ctx context.Context, req *ping.Request) (*ping.Reply, error)
 	p.amountOfPings[id] += 1
 
 	rep := &ping.Reply{Amount: p.amountOfPings[id]}
+
+	//Determine if this nodes' id is greater than the requests' author
+	if p.amountOfPings[id] < p.amountOfPings[p.id] {
+		fmt.Print(id)
+		fmt.Println(" came before me")
+	}
+	if p.amountOfPings[id] > p.amountOfPings[p.id] {
+		fmt.Print("I came before ")
+		fmt.Println(id)
+	}
+	/*
+		if p.id > id {
+			fmt.Print("I AM BIGGER THAN ")
+			fmt.Println(id)
+		}
+	*/
 	return rep, nil
+}
+
+func (p *peer) CriticalState() {
+	fmt.Print(p.id)
+	fmt.Println(" Has accessed the critical state")
 }
 
 // when pinging
