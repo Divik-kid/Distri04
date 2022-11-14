@@ -5,10 +5,12 @@ Peer-to-peer Mutual Exclusion
 Run the program in multiple command prompts using `go run main.go 0` for the first terminal, incrementing the argument for every subsequent terminal.
 Supports a maximum of 3 users at a time.
 
+
 ## How the program works
 After each of the command prompts have been launched press enter to send requests to the other two command prompts. the command prompt will write which peers approved/disaproved the request, the mutual agreement is decided using an implementation of the Ricart & Agrawala algorithm
 
 the Critical state is represented using a print statement to signify that a peer did access it
+
 
 ## System Requirements
 
@@ -26,4 +28,6 @@ the Critical state is represented using a print statement to signify that a peer
     2. Enter IP address/ports through the command line
     3. use a package for service discovery, like the Serf package 
 1. Demonstrate that the system can be started with at least 3 nodes
+
 1. Demonstrate using your system's logs, a sequence of messages in the system, that leads to a node getting access to the Critical Section. You should provide a discussion of your algorithm, using examples from your logs.
+
