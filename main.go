@@ -65,7 +65,7 @@ func main() {
 		c := ping.NewPingClient(conn)
 		p.clients[port] = c
 	}
-
+	p.State = "ACCEPTING"
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		p.sendPingToAll()
@@ -79,6 +79,7 @@ type peer struct {
 	clients       map[int32]ping.PingClient
 	ctx           context.Context
 	LampTime      int32
+	State         string
 }
 
 // when pinged
@@ -89,15 +90,22 @@ func (p *peer) Ping(ctx context.Context, req *ping.Request) (*ping.Reply, error)
 	rep := &ping.Reply{Amount: p.amountOfPings[id], Access: false}
 
 	//Determine if this nodes' id is greater than the requests' author
-	if req.LogTime < p.LampTime {
-		//faster lamport time wins
-		//fmt.Println("YES YOU CAN ACCESS")
-		rep.Access = true
-	} else if req.LogTime == p.LampTime {
-		//bigger ID wins
-		if p.id < id {
-			rep.Access = true
+	//only answer the reply when own requests have been answered
+	for {
+		if p.State == "ACCEPTING" {
+			if req.LogTime < p.LampTime {
+				//faster lamport time wins
+				//fmt.Println("YES YOU CAN ACCESS")
+				rep.Access = true
+			} else if req.LogTime == p.LampTime {
+				//bigger ID wins
+				if p.id < id {
+					rep.Access = true
+				}
+			}
+			break
 		}
+
 	}
 
 	return rep, nil
@@ -112,7 +120,7 @@ func (p *peer) CriticalState() {
 
 // when pinging
 func (p *peer) sendPingToAll() {
-
+	p.State = "WAITING"
 	request := &ping.Request{Id: p.id, LogTime: p.LampTime}
 	p.LampTime += 1
 	var accessCount int
@@ -128,11 +136,12 @@ func (p *peer) sendPingToAll() {
 			//wipe the count and dont access
 			accessCount = 0
 		}
-		if accessCount == len(p.clients) {
-			p.CriticalState()
-		}
 
 		fmt.Printf("id %v said %v\n", id, reply.Access)
 	}
-
+	if accessCount == len(p.clients) {
+		p.CriticalState()
+		accessCount = 0
+	}
+	p.State = "ACCEPTING"
 }
