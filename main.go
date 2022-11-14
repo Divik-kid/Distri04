@@ -82,7 +82,7 @@ func (p *peer) Ping(ctx context.Context, req *ping.Request) (*ping.Reply, error)
 	id := req.Id
 	p.amountOfPings[id] += 1
 
-	rep := &ping.Reply{Amount: p.amountOfPings[id]}
+	rep := &ping.Reply{Amount: p.amountOfPings[id], Access: false}
 
 	//Determine if this nodes' id is greater than the requests' author
 	/*
@@ -95,12 +95,18 @@ func (p *peer) Ping(ctx context.Context, req *ping.Request) (*ping.Reply, error)
 			fmt.Println(id)
 		}
 	*/
-	if p.id > id {
-		fmt.Print("I AM BIGGER THAN ")
-		fmt.Println(id)
-		rep = &ping.Reply{}
+	if req.LogTime < p.amountOfPings[id] {
+		fmt.Println("YES YOU CAN ACCESS")
+	} else {
+		fmt.Println("NO YOU CANT ACCESS")
 	}
-
+	/*
+		if p.id > id {
+			fmt.Print("I AM BIGGER THAN ")
+			fmt.Println(id)
+			rep = &ping.Reply{}
+		}
+	*/
 	return rep, nil
 }
 
@@ -111,7 +117,9 @@ func (p *peer) CriticalState() {
 
 // when pinging
 func (p *peer) sendPingToAll() {
+
 	request := &ping.Request{Id: p.id}
+
 	for id, client := range p.clients {
 		reply, err := client.Ping(p.ctx, request)
 		if err != nil {
