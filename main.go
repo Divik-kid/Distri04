@@ -85,20 +85,22 @@ func (p *peer) Ping(ctx context.Context, req *ping.Request) (*ping.Reply, error)
 	rep := &ping.Reply{Amount: p.amountOfPings[id]}
 
 	//Determine if this nodes' id is greater than the requests' author
-	if p.amountOfPings[id] < p.amountOfPings[p.id] {
-		fmt.Print(id)
-		fmt.Println(" came before me")
-	}
-	if p.amountOfPings[id] > p.amountOfPings[p.id] {
-		fmt.Print("I came before ")
-		fmt.Println(id)
-	}
 	/*
-		if p.id > id {
-			fmt.Print("I AM BIGGER THAN ")
+		if p.amountOfPings[id] < p.amountOfPings[p.id] {
+			fmt.Print(id)
+			fmt.Println(" came before me")
+		}
+		if p.amountOfPings[id] > p.amountOfPings[p.id] {
+			fmt.Print("I came before ")
 			fmt.Println(id)
 		}
 	*/
+	if p.id > id {
+		fmt.Print("I AM BIGGER THAN ")
+		fmt.Println(id)
+		rep = &ping.Reply{}
+	}
+
 	return rep, nil
 }
 
@@ -117,4 +119,5 @@ func (p *peer) sendPingToAll() {
 		}
 		fmt.Printf("Got reply from id %v: %v\n", id, reply.Amount)
 	}
+
 }
