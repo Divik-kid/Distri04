@@ -2,15 +2,16 @@
 Peer-to-peer Mutual Exclusion
 
 ## How to start the system
-Run the program in multiple command prompts using `go run main.go 0` for the first terminal, incrementing the argument for every subsequent terminal.
+
+Run the program in multiple command prompts using `go run main.go 0` for the first terminal, `go run main.go 1` for the second, and so fourth. 
 Supports a maximum of 3 users at a time.
 
-
 ## How the program works
-After each of the command prompts have been launched press enter to send requests to the other two command prompts. the command prompt will write which peers approved/disaproved the request, the mutual agreement is decided using an implementation of the Ricart & Agrawala algorithm
 
-the Critical state is represented using a print statement to signify that a peer did access it
+After each of the command prompts have been launched press enter to send requests to the other two command prompts. 
+The command prompt will write which peers approved/disaproved the request, the mutual agreement is decided using an implementation of the Ricart & Agrawala algorithm
 
+The Critical state is represented using a print statement to signify that a peer did access it
 
 ## System Requirements
 
